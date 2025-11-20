@@ -3,6 +3,8 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
+//👌😊👌
+
 public class Interface extends JFrame {
 
     private JTabbedPane mainPane;
@@ -44,9 +46,6 @@ public class Interface extends JFrame {
         toolbar.add(Savebtn);
         toolbar.setFloatable(false);
         toolbar.setRollover(true);
-
-        
-
 
         inventory.add(toolbar);
         inventory.add(scrollPane);
