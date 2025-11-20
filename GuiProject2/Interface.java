@@ -10,7 +10,7 @@ public class Interface extends JFrame {
     private JToolBar toolbar;
     private JButton addItembtn, deleteItembtn, addStockbtn, depleteStockbtn, Savebtn;
     private JScrollPane scrollPane;
-    private JList<String> itemList;
+    private JList<String> itemList = new JList<String>(new String[]{"Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6", "Item 7", "Item 8", "Item 9", "Item 10"});
 
     public Interface(){
         setTitle("Inventory Management System");
@@ -33,16 +33,9 @@ public class Interface extends JFrame {
         addStockbtn = new JButton("Add Stock");
         depleteStockbtn = new JButton("Deplete Stock");
         Savebtn = new JButton("Save");
-        scrollPane = new JScrollPane();
-        itemList = new JList<String>();
+        scrollPane = new JScrollPane(itemList);
 
-        itemList.setVisibleRowCount(1);
         itemList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-        scrollPane.add(itemList);
-        scrollPane.setViewportView(itemList);
-
-        
 
         toolbar.add(addItembtn);
         toolbar.add(deleteItembtn);

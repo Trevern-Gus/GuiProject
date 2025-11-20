@@ -110,6 +110,7 @@ public class RunInventory {
                     break;
                 case 6:
                     System.out.println("Exiting the program. Goodbye!");
+                    scan.close();
                     running = false;
                     break;
             }
