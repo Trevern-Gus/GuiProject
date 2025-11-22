@@ -17,22 +17,33 @@ public class Perishable extends Item {
         this.expirationDate = expirationDate;
     }
 
-    public void depleteStock(int amt){
-        if (getAmountInStock() > amt){
-            setAmountInStock(getAmountInStock()- amt);
-            if (getAmountInStock() < getMinimumStock()){
-                System.out.println("Alert the stock is lower than the minimum threshold!");
-            }
-        }
-        else{
-            System.out.println("There is not enough in stock for the order");
+   
+
+    @Override
+    public void depleteStock(int amount) throws InvalidEntryException, NotEnoughStockException{
+
+        if (amount < 0){
+            throw new InvalidEntryException("Invalid. Only enter positive numbers.");
         }
 
-        if (!expirationDate.isBefore(LocalDate.now())){
-            System.out.println("Alert the item has expired!");
+        if (amount > getAmountInStock()){
+            throw new NotEnoughStockException("Not enough in stock.");
         }
-    
+
+        LocalDate todayDate = LocalDate.now();
+        if(!getExpirationDate().isAfter(todayDate.plusDays(2))){
+            System.out.println("This stock is expiring soon!");
+        }
+        if (getAmountInStock()> 0 ){
+            int currentStock = getAmountInStock() - amount;
+            setAmountInStock(currentStock);
+        }
+
+        if(getAmountInStock() < getMinimumStock()){
+            System.out.println("Stock is running low.\n");
+        }
     }
+
 
     // credit to copilot for helping me with this section specifially .isBefore here is the prompt used: if i wanted to find out if an expiration date was after a ceratin date what would i type, i wanna use a comparison like before to check
     public double calculatePrice(){

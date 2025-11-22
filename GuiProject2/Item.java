@@ -55,15 +55,18 @@ public abstract class Item{
         this.amountInStock = amountInStock;
     }
 
-    public void addtostock(int amt){
-        setAmountInStock(getAmountInStock() + amt);
+    public void addStock(int commodity) throws InvalidEntryException{
+        if(commodity < 0){
+            throw new InvalidEntryException("Invalid. Only positive integers are allowed.");
+        }
+        this.amountInStock += commodity;
     }
 
     public void displayItem(){
         System.out.println("name:" + getName() + " inventoryNumber:" + getInventoryNumber() + " unitPrice:" + getUnitPrice() + " Stock:" + getAmountInStock());
     }
 
-    public abstract void depleteStock(int amt);
+    abstract void depleteStock(int amount) throws InvalidEntryException, NotEnoughStockException;
 
     public abstract double calculatePrice();
     

@@ -16,17 +16,24 @@ public class nonPerishable extends Item{
         this.warranty = warranty;
     }
 
-    public void depleteStock(int amt) {
-        if (getAmountInStock() > amt){
-            setAmountInStock(getAmountInStock()- amt);
-            if (getAmountInStock() < getMinimumStock()){
-                System.out.println("Alert the stock is lower than the minimum threshold!");
-            }
+    
+    @Override
+    public void depleteStock(int amount) throws InvalidEntryException, NotEnoughStockException{
+        if (amount < 0){
+            throw new InvalidEntryException("Invalid. Only enter positive numbers.");
         }
-        else{
-            System.out.println("There is not enough in stock for the order");
+
+        if (amount > getAmountInStock()){
+            throw new NotEnoughStockException("Not enough in stock.");
+        }
+
+        int currentStock = getAmountInStock() - amount;
+        setAmountInStock(currentStock);
+        if (getAmountInStock() < getMinimumStock()){
+            System.out.println("Stock level is low");
         }
     }
+
 
     public double calculatePrice(){
         return getUnitPrice() * 1.17;

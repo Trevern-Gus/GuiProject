@@ -52,6 +52,9 @@ public class RunInventory {
                     }
                     System.out.println("Item added successfully!");
                     break;
+
+                
+                    //Have to add exceptions 
                 case 2:
                     System.out.println("Set the inventory number to deplete:");
                     int invtnum = scan.nextInt();
@@ -66,6 +69,8 @@ public class RunInventory {
                         }
                     }
                     break;
+
+                //Have to add exceptions 
                 case 3:
                     System.out.println("Enter the inventory number to add:");
                     int inventnum = scan.nextInt();
@@ -85,6 +90,9 @@ public class RunInventory {
                         item.displayItem();
                     }
                     break;
+
+
+                //Might have to add exceptions 
                 case 5:
                     Sale sale = new Sale();
                     boolean run = true;
@@ -108,6 +116,8 @@ public class RunInventory {
                     }
                     System.out.println("Total sale price: $" + sale.calculatePrice());
                     break;
+
+                    
                 case 6:
                     System.out.println("Exiting the program. Goodbye!");
                     scan.close();
