@@ -1,6 +1,7 @@
 package GuiProject2;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.time.LocalDate;
@@ -24,7 +25,7 @@ public class Interface extends JFrame {
 
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab("Inventory", createInventoryPanel());
-        tabbedPane.addTab("Sale", new JPanel()); // Placeholder for Sale Tab
+        tabbedPane.addTab("Sale", createSalePanel()); // Placeholder for Sale Tab
         add(tabbedPane);
 
         setLocationRelativeTo(null);
@@ -106,6 +107,162 @@ public class Interface extends JFrame {
 
         return panel;
     }
+
+ private JPanel createSalePanel() {
+    JPanel panel = new JPanel(new BorderLayout());
+
+    // Save Sale history
+    ArrayList<Sale> saleHist = new ArrayList<>();
+
+
+    JPanel topPanel = new JPanel();
+    topPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+
+    JComboBox<Item> cbItems = new JComboBox<>();
+    JTextField txtQty = new JTextField(5);
+
+    JButton btnAdd = new JButton("Add");
+    JButton btnRemove = new JButton("Remove");
+    JButton btnRefresh = new JButton("Refresh");
+
+    topPanel.add(new JLabel("Item:"));
+    topPanel.add(cbItems);
+
+    topPanel.add(new JLabel("Qty:"));
+    topPanel.add(txtQty);
+
+    topPanel.add(btnAdd);
+    topPanel.add(btnRemove);
+    topPanel.add(btnRefresh);
+
+    panel.add(topPanel, BorderLayout.NORTH);
+
+    Runnable reloadDropdown = () -> {
+        cbItems.removeAllItems();
+        for (Item i : itemList) {
+            cbItems.addItem(i); // uses Item.toString()
+        }
+    };
+
+    reloadDropdown.run();
+
+    String[] cols = {"Inv#", "Name", "Qty", "Unit Price", "Line Total"};
+    DefaultTableModel saleModel = new DefaultTableModel(cols, 0);
+    JTable saleTable = new JTable(saleModel);
+
+    panel.add(new JScrollPane(saleTable), BorderLayout.CENTER);
+    JPanel bottomPanel = new JPanel(new BorderLayout());
+
+    JTextField txtTotal = new JTextField("0.00");
+    txtTotal.setEditable(false);
+    txtTotal.setFont(new Font("Arial", Font.BOLD, 16));
+
+    JButton btnComplete = new JButton("Complete Sale");
+
+    bottomPanel.add(txtTotal, BorderLayout.CENTER);
+    bottomPanel.add(btnComplete, BorderLayout.EAST);
+
+    panel.add(bottomPanel, BorderLayout.SOUTH);
+
+
+
+    Runnable updateTotal = () -> {
+        double total = 0;
+        for (int i = 0; i < saleModel.getRowCount(); i++) {
+            total += (double) saleModel.getValueAt(i, 4);
+        }
+        txtTotal.setText(String.format("%.2f", total));
+    };
+    //Add sale item to table
+    btnAdd.addActionListener(e -> {
+
+        Item selected = (Item) cbItems.getSelectedItem();
+        if (selected == null) return;
+
+        int qty;
+        try {
+            qty = Integer.parseInt(txtQty.getText());
+            if (qty <= 0) throw new NumberFormatException();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Enter a valid integer quantity.");
+            return;
+        }
+
+        double price = selected.getUnitPrice();
+        double lineTotal = qty * price;
+
+        saleModel.addRow(new Object[]{
+                selected.getInventoryNumber(),
+                selected.getName(),
+                qty,
+                price,
+                lineTotal
+        });
+
+        updateTotal.run();
+    });
+ // Remove item on line
+    btnRemove.addActionListener(e -> {
+        int row = saleTable.getSelectedRow();
+        if (row != -1) {
+            saleModel.removeRow(row);
+            updateTotal.run();
+        }
+    });
+
+    //refresh Dropdown
+    btnRefresh.addActionListener(e -> reloadDropdown.run());
+
+    // Finish Sale
+    btnComplete.addActionListener(e -> {
+
+        if (saleModel.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this, "No items in sale.");
+            return;
+        }
+
+        Sale sale = new Sale();
+
+        // deduct stock and form sale items
+        for (int i = 0; i < saleModel.getRowCount(); i++) {
+
+            int inv = (int) saleModel.getValueAt(i, 0);
+            String name = (String) saleModel.getValueAt(i, 1);
+            int qty = (int) saleModel.getValueAt(i, 2);
+            double price = (double) saleModel.getValueAt(i, 3);
+
+            // Find item in itemList
+            for (Item it : itemList) {
+                if (it.getInventoryNumber() == inv) {
+                    try {
+                        it.depleteStock(qty);
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(this, ex.getMessage());
+                        return; 
+                    }
+                }
+            }
+
+            SaleItem si = new SaleItem(name, inv, price, qty);
+            sale.items.add(si);
+        }
+
+        saleHist.add(sale); // Save the sale
+
+        // Should probably hopefully Clear UI
+        saleModel.setRowCount(0);
+        txtQty.setText("");
+        txtTotal.setText("0.00");
+
+        JOptionPane.showMessageDialog(this,
+                "Sale completed.\nTotal: $" + sale.calculatePrice());
+    });
+
+
+
+    return panel;
+}
+
 
     private void refreshItemList() {
         listModel.clear();
