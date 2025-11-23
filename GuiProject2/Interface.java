@@ -168,93 +168,135 @@ public class Interface extends JFrame {
         };
 
         // Add item to table
-        btnAdd.addActionListener(e -> {
+      btnAdd.addActionListener(e -> {
             Item selected = (Item) cbItems.getSelectedItem();
-            if (selected == null) return;
-
-            int qty;
-            try {
-                qty = Integer.parseInt(txtQty.getText());
-                if (qty <= 0) throw new InvalidEntryException("Quantity must be positive.");
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Enter a valid integer quantity.");
-                return;
-            } catch (InvalidEntryException ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage());
+            if (selected == null) {
+                JOptionPane.showMessageDialog(this, "Please select an item.", "No Selection", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            double price = selected.getUnitPrice();
-            double lineTotal = qty * price;
+            try {
+                int qty = Integer.parseInt(txtQty.getText().trim());
+                if (qty <= 0) {
+                    throw new InvalidEntryException("Quantity must be positive.");
+                }
 
-            saleModel.addRow(new Object[]{
+              
+                selected.depleteStock(qty);
+
+                double price = selected.getUnitPrice();
+                double lineTotal = qty * price;
+
+                saleModel.addRow(new Object[]{
                     selected.getInventoryNumber(),
                     selected.getName(),
                     qty,
                     price,
                     lineTotal
-            });
+                });
 
-            updateTotal.run();
+                updateTotal.run();
+
+            }catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Enter a valid integer quantity.", "Input Error", JOptionPane.ERROR_MESSAGE);
+            } catch (InvalidEntryException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Invalid Entry", JOptionPane.ERROR_MESSAGE);
+            } catch (NotEnoughStockException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Stock Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
+
 
         // Remove item using selected line
         btnRemove.addActionListener(e -> {
             int row = saleTable.getSelectedRow();
-            if (row != -1) {
-                saleModel.removeRow(row);
-                updateTotal.run();
+            if (row == -1) {
+                JOptionPane.showMessageDialog(this, "Please select a row to remove.", "No Selection", JOptionPane.WARNING_MESSAGE);
+                return;
             }
+
+            int inv = (int) saleModel.getValueAt(row, 0);
+            int qty = (int) saleModel.getValueAt(row, 2);
+
+            for (Item it : itemList) {
+                if (it.getInventoryNumber() == inv) {
+                    try {
+                        it.addStock(qty); 
+                    } catch (InvalidEntryException ex) {
+                        JOptionPane.showMessageDialog(this, ex.getMessage(), "Invalid Entry", JOptionPane.ERROR_MESSAGE);
+                        return; 
+                    }
+                }
+            }
+
+            saleModel.removeRow(row);
+            updateTotal.run();
         });
+
 
         // Refresh the dropdown
         btnRefresh.addActionListener(e -> reloadDropdown.run());
 
         // Finish the sale
-        btnComplete.addActionListener(e -> {
-            if (saleModel.getRowCount() == 0) {
-                JOptionPane.showMessageDialog(this, "No items in sale.");
-                return;
-            }
-
-            Sale sale = new Sale();
-
-            // Deduct stock and add to sale
-            for (int i = 0; i < saleModel.getRowCount(); i++) {
-                int inv = (int) saleModel.getValueAt(i, 0);
-                String name = (String) saleModel.getValueAt(i, 1);
-                int qty = (int) saleModel.getValueAt(i, 2);
-                double price = (double) saleModel.getValueAt(i, 3);
-
-                // Find item in itemList
-                for (Item it : itemList) {
-                    if (it.getInventoryNumber() == inv) {
-                        try {
-                            it.depleteStock(qty);  
-                        } catch (InvalidEntryException ex) {
-                            JOptionPane.showMessageDialog(this, "Invalid quantity: " + ex.getMessage());
-                            return; 
-                        } catch (NotEnoughStockException ex) {
-                            JOptionPane.showMessageDialog(this, "Stock error: " + ex.getMessage());
-                            return; 
-                        }
-                    }
+         btnComplete.addActionListener(e -> {
+                if (saleModel.getRowCount() == 0) {
+                    JOptionPane.showMessageDialog(this, "No items in sale.", "Warning", JOptionPane.WARNING_MESSAGE);
+                    return;
                 }
 
-                SaleItem si = new SaleItem(name, inv, price, qty);
-                sale.items.add(si);
-            }
+                Sale sale = new Sale(new ArrayList<>());
 
-            saleHist.add(sale); // Save the sale
+                for (int i = 0; i < saleModel.getRowCount(); i++) {
+                    int inv = (int) saleModel.getValueAt(i, 0);
+                    String name = (String) saleModel.getValueAt(i, 1);
+                    int qty = (int) saleModel.getValueAt(i, 2);
+                    double price = (double) saleModel.getValueAt(i, 3);
 
-            // Clear UI
-            saleModel.setRowCount(0);
-            txtQty.setText("");
-            txtTotal.setText("0.00");
+                    for (Item it : itemList) {
+                        if (it.getInventoryNumber() == inv) {
+                            try {
+                                it.depleteStock(qty);
+                                if (it.getAmountInStock() < it.getMinimumStock()) {
+                                    JOptionPane.showMessageDialog(this,
+                                            "Warning: '" + it.getName() + "' is below minimum stock.",
+                                            "Stock Warning", JOptionPane.WARNING_MESSAGE);
+                                }
+                                if (it instanceof Perishable) {
+                                    LocalDate exp = ((Perishable) it).getExpirationDate();
+                                    if (exp != null && java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), exp) <= 5) {
+                                        JOptionPane.showMessageDialog(this,
+                                                "Warning: '" + it.getName() + "' is within 5 days of expiry.",
+                                                "Stock Warning", JOptionPane.WARNING_MESSAGE);
+                                    }
+                                }
 
-            JOptionPane.showMessageDialog(this,
-                    "Sale completed.\nTotal: $" + sale.calculatePrice());
-        });
+                            } catch (InvalidEntryException ex) {
+                                JOptionPane.showMessageDialog(this, "Invalid quantity: " + ex.getMessage(),
+                                        "Invalid Entry", JOptionPane.ERROR_MESSAGE);
+                                return;
+                            } catch (NotEnoughStockException ex) {
+                                JOptionPane.showMessageDialog(this, "Stock error: " + ex.getMessage(),
+                                        "Not Enough Stock", JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
+                        }
+                    }
+
+                    SaleItem si = new SaleItem(name, inv, price, qty);
+                    sale.getSaleItems().add(si);
+                }
+
+                saleHist.add(sale);
+
+                // Clear UI
+                saleModel.setRowCount(0);
+                txtQty.setText("");
+                txtTotal.setText("0.00");
+
+                JOptionPane.showMessageDialog(this,
+                        "Sale completed.\nTotal: $" + sale.calculatePrice(),
+                        "Sale Completed", JOptionPane.INFORMATION_MESSAGE);
+            });
 
         return panel;
     }
@@ -330,31 +372,54 @@ public class Interface extends JFrame {
         }
     }
 
-    private void changeStock(boolean add) {
+   private void changeStock(boolean add) {
         Item selected = itemJList.getSelectedValue();
-        if (selected != null) {
-            String input = JOptionPane.showInputDialog(this,
-                    add ? "Enter amount to add:" : "Enter amount to deplete:");
-            if (input != null && !input.isEmpty()) {
-                int amt = Integer.parseInt(input);
-                if (add) {
-                   try {
-                            selected.addStock(amt);
-                        } catch (InvalidEntryException ex) {
-                            JOptionPane.showMessageDialog(this, ex.getMessage());
-                        }
-                } 
-                else {
-                   try {
-                            selected.depleteStock(amt);
-                        } catch (InvalidEntryException ex) {
-                            JOptionPane.showMessageDialog(this, ex.getMessage());
-                        }
-                }
-                txtAmountInStock.setText(String.valueOf(selected.getAmountInStock()));
-            }
+        if (selected == null) {
+            JOptionPane.showMessageDialog(this, "Please select an item first.", "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
         }
-    }
+
+        String input = JOptionPane.showInputDialog(this,
+                add ? "Enter amount to add:" : "Enter amount to deplete:");
+        if (input == null || input.trim().isEmpty()) {
+            return;
+        }
+
+        try {
+            int amt = Integer.parseInt(input.trim());
+
+            if (add) {
+                selected.addStock(amt);
+            } else {
+                selected.depleteStock(amt);
+
+     
+                if (selected.getAmountInStock() < selected.getMinimumStock()) {
+                    JOptionPane.showMessageDialog(this,
+                            "Warning: '" + selected.getName() + "' is below minimum stock.",
+                            "Stock Warning", JOptionPane.WARNING_MESSAGE);
+                }
+                if (selected instanceof Perishable) {
+                    LocalDate exp = ((Perishable) selected).getExpirationDate();
+                    if (exp != null && java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), exp) <= 5) {
+                        JOptionPane.showMessageDialog(this,
+                                "Warning: '" + selected.getName() + "' is within 5 days of expiry.",
+                                "Stock Warning", JOptionPane.WARNING_MESSAGE);
+                    }
+                }
+            }
+
+            txtAmountInStock.setText(String.valueOf(selected.getAmountInStock()));
+            refreshItemList();
+
+        } catch (InvalidEntryException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Invalid Entry", JOptionPane.ERROR_MESSAGE);
+        } catch (NotEnoughStockException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Stock Error", JOptionPane.ERROR_MESSAGE);
+        }
+}
+
+
 
     public static void main(String[] args) {
         ArrayList<Item> items = new ArrayList<>();
