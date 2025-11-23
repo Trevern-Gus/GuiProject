@@ -15,7 +15,7 @@ public class Interface extends JFrame {
 
     private JTextField txtInventoryNumber, txtName, txtAmountInStock, txtMinStock, txtUnitPrice, txtExpiry, txtWarranty;
     private JButton btnAddItem, btnDeleteItem, btnAddStock, btnDepleteStock, btnSave;
-    private int nextInventoryNumber = 1000;
+    private int nextInventoryNumber = 1003;// wait wait we ever use run inven?
 
     public Interface(ArrayList<Item> items) {
         this.itemList = items;
