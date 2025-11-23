@@ -2,15 +2,16 @@ package GuiProject2;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class Sale{
     private LocalDate date;
     private int invoicenum;
-    public ArrayList<SaleItem> items;
+    private ArrayList<SaleItem> items;
 
-    public Sale(){
-        this.items = new ArrayList<SaleItem>();
+    public Sale(List<SaleItem> saleItems){
+        this.items = new ArrayList(saleItems);
         this.date = LocalDate.now();
         ArrayList<Integer> uniques = new ArrayList<Integer>();
         Random rand = new Random();
@@ -32,14 +33,16 @@ public class Sale{
     public int getInvoicenum() {
         return invoicenum;
     }
-    
+    public List<SaleItem> getSaleItems() {
+         return items; 
+    }
+
     public double calculatePrice(){
-        double total = 0.00;
-        for (int i=0; i < items.size(); i++){
-            total += items.get(i).getTotalprice();
 
+      double total = 0.0;
+        for (SaleItem i : items) {
+            total += i.getTotalprice();
         }
-
         return total;
     }
 

@@ -1,10 +1,12 @@
 package GuiProject2;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.time.LocalDate;
 
 
 public class RunInventory {
+    private static final ArrayList<Sale> sales = new ArrayList<>();
     public static void main(String[] args) {
         ArrayList<Item> itemList = new ArrayList<Item>();
         boolean running = true;
@@ -18,7 +20,7 @@ public class RunInventory {
             System.out.println("4. Display item details");
             System.out.println("5. Record a Sale");
             System.out.println("6. Exit");
-            System.out.println("Enter the number with your choice:");
+            System.out.print("Enter the number with your choice: ");
 
             int choice = scan.nextInt();
             scan.nextLine();
@@ -53,68 +55,130 @@ public class RunInventory {
                     System.out.println("Item added successfully!");
                     break;
 
-                
-                    //Have to add exceptions 
+        
                 case 2:
-                    System.out.println("Set the inventory number to deplete:");
-                    int invtnum = scan.nextInt();
-                    scan.nextLine();
-                    System.out.println("Set the amount to deplete:");
-                    int amt = scan.nextInt();
-                    scan.nextLine();
-                    for (Item item : itemList) {
-                        if (item.getInventoryNumber() == invtnum) {
-                            item.depleteStock(amt);
-                            System.out.println("New stock amount: " + item.getAmountInStock());
-                        }
-                    }
+                      System.out.println("\n--- Add to stock ---");
+                      System.out.print("Inventory number: ");
+                            int invNum = scan.nextInt();
+
+                            Item productItem = null;
+                            for (Item i : itemList) {
+                                if (i.getInventoryNumber() == invNum) {
+                                    productItem = i;
+                                    break;
+                                }
+                            }
+
+                            if (productItem == null) {
+                                System.out.println("Item not found.");
+                                break;
+                            }
+
+                            System.out.print("Amount of commodity: ");
+                            int commoAmount = scan.nextInt();
+
+                            try {
+                                productItem.addStock(commoAmount);
+                                System.out.println("Stock level updated.");
+                            } catch (InvalidEntryException e) {
+                                System.out.println(e.getMessage());
+                            }
                     break;
 
-                //Have to add exceptions 
+                
                 case 3:
-                    System.out.println("Enter the inventory number to add:");
-                    int inventnum = scan.nextInt();
-                    scan.nextLine();
-                    System.out.println("Enter the amount to add:");
-                    int amts = scan.nextInt();
-                    scan.nextLine();
-                    for (Item item : itemList) {
-                        if (item.getInventoryNumber() == inventnum) {
-                            item.addtostock(amts);
-                            System.out.println("New stock amount: " + item.getAmountInStock());
-                        }
-                    }
-                    break;
-                case 4:
-                    for (Item item : itemList) {
-                        item.displayItem();
-                    }
-                    break;
+                        System.out.println("\n--- Deplete Stock---");
+                        System.out.print("Inventory number: ");
+                        int inv = scan.nextInt();
+                        System.out.print("Deplete Amount: ");
+                        int amt = scan.nextInt();
 
-
-                //Might have to add exceptions 
-                case 5:
-                    Sale sale = new Sale();
-                    boolean run = true;
-                    while (run) {
-                        System.out.println("Enter the inventory number of the item you wish to add to the sale:");
-                        int invnums = scan.nextInt();
-                        scan.nextLine();
-                        System.out.println("Enter the quantity you wish to sell:");
-                        int qty = scan.nextInt();
-                        scan.nextLine();
-                        for (Item item : itemList) {
-                            if (item.getInventoryNumber() == invnums) {
-                                sale.items.add(new SaleItem(item.getName(), item.getInventoryNumber(), item.getUnitPrice(), qty));
+                        Item itemFound = null;
+                        for (Item itm : itemList) {
+                            if (itm.getInventoryNumber() == inv) {
+                                itemFound = itm;
+                                break;
                             }
                         }
-                        System.out.println("Do you want to add another item to the sale? (yes/no)");
-                        String response = scan.nextLine();
-                        if (!response.equalsIgnoreCase("yes")) {
-                            run = false;
+
+                        if (itemFound == null) {
+                            System.out.println("Item not found.");
+                            break;
                         }
+
+                        try {
+                            itemFound.depleteStock(amt);
+                            System.out.println("Stock updated for item: " + itemFound.getName());
+                        } catch (InvalidEntryException e) {
+                            System.out.println(e.getMessage());
+                        } catch (NotEnoughStockException e) {
+                            System.out.println(e.getMessage());
+                        }
+            
+                    break;
+                case 4:
+                    for (Item itemm : itemList) {
+                        itemm.displayItem();
                     }
-                    System.out.println("Total sale price: $" + sale.calculatePrice());
+                    break;
+
+
+                
+                case 5:
+                     System.out.println("\n---Input Sales---");
+                        List<SaleItem> saleItems = new ArrayList<>();
+
+                        while (true) {
+                            System.out.print("Enter inventory number to sell (enter -1 to end session): ");
+                            int inventNum = scan.nextInt();
+                            if (inventNum == -1) break;
+
+                            Item item = null;
+                            for (Item i : itemList) {
+                                if (i.getInventoryNumber() == inventNum) {
+                                    item = i;
+                                    break; 
+                                }
+                            }
+
+                            if (item == null) {
+                                System.out.println("Item not found.");
+                                continue;
+                            }
+
+                            System.out.print("Quantity: ");
+                            int quantity = scan.nextInt();
+
+                            try {
+                                item.depleteStock(quantity);
+
+                                double unitPrice = item.calculatePrice();
+                                SaleItem saleItem = new SaleItem(
+                                    item.getName(),
+                                    item.getInventoryNumber(),
+                                    unitPrice,
+                                    quantity
+                                );
+                                saleItems.add(saleItem);
+
+                            } catch (InvalidEntryException e) {
+                                System.out.println(e.getMessage());
+                            } catch (NotEnoughStockException e) {
+                                System.out.println(e.getMessage());
+                            }
+                        }
+
+                        if (!saleItems.isEmpty()) {
+                            Sale sale = new Sale(saleItems);
+                            sales.add(sale);
+                        
+                            System.out.println("\nInvoice: #" + sale.getInvoicenum());
+                            System.out.println("Date: " + sale.getDate());
+                            for (SaleItem saleItem : sale.getSaleItems()) {
+                                System.out.println("Item: " + saleItem.getInvname() + "\tQTY: " + saleItem.getQuantity());
+                            }
+                            System.out.printf("Total Price: $%.2f%n", sale.calculatePrice());
+                        }
                     break;
 
                     
