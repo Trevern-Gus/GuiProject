@@ -1,11 +1,10 @@
 package GuiProject2;
 
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 
 public class Interface extends JFrame {
 
@@ -116,7 +115,7 @@ public class Interface extends JFrame {
         JButton btnAdd = new JButton("Add");
         JButton btnRemove = new JButton("Remove");
         JButton btnRefresh = new JButton("Refresh");
-
+        //panel
         topPanel.add(new JLabel("Item:"));
         topPanel.add(cbItems);
         topPanel.add(new JLabel("Qty:"));
@@ -157,7 +156,7 @@ public class Interface extends JFrame {
         };
 
         reloadDropdown.run();
-
+        
         btnAdd.addActionListener(e -> {
             Item selected = (Item) cbItems.getSelectedItem();
             if (selected == null) {
@@ -203,20 +202,6 @@ public class Interface extends JFrame {
             if (row == -1) {
                 JOptionPane.showMessageDialog(this, "Please select a row to remove.", "No Selection", JOptionPane.WARNING_MESSAGE);
                 return;
-            }
-
-            int inv = (int) saleModel.getValueAt(row, 0);
-            int qty = (int) saleModel.getValueAt(row, 2);
-
-            for (Item it : itemList) {
-                if (it.getInventoryNumber() == inv) {
-                    try {
-                        it.addStock(qty); 
-                    } catch (InvalidEntryException ex) {
-                        JOptionPane.showMessageDialog(this, ex.getMessage(), "Invalid Entry", JOptionPane.ERROR_MESSAGE);
-                        return; 
-                    }
-                }
             }
 
             saleModel.removeRow(row);
