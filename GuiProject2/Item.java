@@ -69,5 +69,11 @@ public abstract class Item{
     abstract void depleteStock(int amount) throws InvalidEntryException, NotEnoughStockException;
 
     public abstract double calculatePrice();
+
+    @Override
+    public String toString() {
+        return name + " (Inv#: " + inventoryNumber + ")";
+    }
     
 }
+
